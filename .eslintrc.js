@@ -11,5 +11,11 @@ module.exports = {
   },
   rules: {
     quotes: [2, "double"],
+    "no-unused-vars": 0,
+    "no-restricted-syntax": [
+      "error",
+      "FunctionExpression",
+      "FunctionDeclaration",
+    ],
   },
 };

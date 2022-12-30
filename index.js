@@ -3,17 +3,16 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { MongoClient } = require("mongodb");
+const uniqid = require("uniqid");
 
 const app = express();
 const port = process.env.PORT || 8080;
-const URI = process.env.URI;
+const { URI } = process.env;
 
 app.use(cors());
 app.use(express.json());
 
 const client = new MongoClient(URI);
-
-//   ii. Extra: Leisti užpildyti tik vieną kartą  - NELEIS UZPILDYTI ANTRA KARTA, NES MONGODB NEPRIIMS PASIKARTOJANCIO _ID
 
 app.post("/api/fill", async (req, res) => {
   try {
@@ -45,21 +44,30 @@ app.post("/api/fill", async (req, res) => {
 });
 
 app.post("/api/users", async (req, res) => {
+  const id = uniqid();
   try {
     const con = await client.connect();
-    const users = await con.db("exam").collection("users").insertOne({
-      name: req.body.name,
-      email: req.body.email,
-      _id: req.body.id,
-    });
-    const address = await con.db("exam").collection("address").insertOne({
-      city: req.body.city,
-      street: req.body.street,
-      _id: req.body.id,
-    });
-
-    await con.close();
-    res.send("Added");
+    const data = await con
+      .db("exam")
+      .collection("users")
+      .findOne({ name: `${req.body.name}` });
+    if (data == null) {
+      const con = await client.connect();
+      const users = await con.db("exam").collection("users").insertOne({
+        name: req.body.name,
+        email: req.body.email,
+        _id: id,
+      });
+      const address = await con.db("exam").collection("address").insertOne({
+        city: req.body.city,
+        street: req.body.street,
+        _id: id,
+      });
+      await con.close();
+      res.send("Added");
+    } else {
+      res.send("User exist");
+    }
   } catch (error) {
     res.status(500).send(error);
   }
